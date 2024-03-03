@@ -1,0 +1,58 @@
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: 'true'
+          lower-case-service-id: 'true'
+  main:
+    allow-circular-references: 'true'
+  rabbitmq:
+    password: guest
+    host: localhost
+    port: '5672'
+    username: guest
+  application:
+    name: HUMAN-RESOURCE-SERVICE
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/asms_hr
+    username: postgres
+    password: frank
+    pool:
+      initial-size: 10
+      max-size: 20
+      acquire-timeout: 30s
+      validation-query: SELECT 1
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/asms_hr
+    user: postgres
+    password: frank
+    locations: classpath:db/migration
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: 'false'
+eureka:
+  client:
+    fetch-registry: 'true'
+    register-with-eureka: 'true'
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    lease-renewal-interval-in-seconds: '2'
+    lease-expiration-duration-in-seconds: '1'
+server:
+  port: '0'
+accounting:
+  transaction:
+    exchange: ACCOUNTING_TRANSACTION_EXCHANGE
+    routingKey: ACCOUNTING_TRANSACTION_ROUTING_KEY
+    queue: ACCOUNTING_TRANSACTION_QUEUE
+file:
+  upload:
+    directory: /var/lib/server/data
+
