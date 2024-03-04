@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,23 +13,26 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table("staff")
-public class Staff {
+@Table("deduction_accounts")
+public class DeductionAccount {
     @Id
     private Long id;
 
-    @Column("user_id")
-    private Long userId;
+    @Column("account_id")
+    private Long accountId;
+
+    @Transient
+    private Deduction deduction;
+
+    @Column("deduction_id")
+    private Long deductionId;
 
     @Column("company_id")
     private Long companyId;
 
-    @Column("salary")
-    private BigDecimal salary;
+    @Column("fixed_amount")
+    private BigDecimal fixedAmount;
 
-    @Column("number")
-    private String number;
-
-    @Column("title")
-    private String title;
+    @Column("percentage")
+    private Double percentage;
 }

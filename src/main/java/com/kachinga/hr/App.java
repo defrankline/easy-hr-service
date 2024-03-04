@@ -4,17 +4,23 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.context.annotation.ComponentScan;
 
 import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@ComponentScan("com.kachinga.hr.repository")
 public class App {
 
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
+        startSuccess();
+    }
+
+    private static void startSuccess() {
+        final String ANSI_GREEN = "\u001B[32m";
+        final String ANSI_BOLD = "\u001B[1m";
+        final String ANSI_RESET = "\u001B[0m";
+        System.out.println(ANSI_GREEN + ANSI_BOLD + "Human Resource Service Started Successfully!" + ANSI_RESET);
     }
 
     @PostConstruct

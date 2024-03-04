@@ -4,31 +4,27 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-
-import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table("staff")
-public class Staff {
+@Table("monthly_deductions")
+public class MonthlyDeduction {
     @Id
     private Long id;
 
-    @Column("user_id")
-    private Long userId;
+    @Transient
+    private Staff staff;
 
-    @Column("company_id")
-    private Long companyId;
+    @Column("staff_id")
+    private Long staffId;
 
-    @Column("salary")
-    private BigDecimal salary;
+    @Transient
+    private Deduction deduction;
 
-    @Column("number")
-    private String number;
-
-    @Column("title")
-    private String title;
+    @Column("deduction_id")
+    private Long deductionId;
 }
