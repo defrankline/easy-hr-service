@@ -33,27 +33,21 @@ public class PayrollItem {
     @Column("gross")
     private BigDecimal gross;
 
-    @Column("social_security_fund")
-    private BigDecimal socialSecurityFund;
+    @Column("deduction")
+    private BigDecimal deduction;
 
-    @Column("pay_as_you_earn")
-    private BigDecimal payAsYouEarn;
+    @Column("miscellaneous_earning")
+    private BigDecimal miscellaneousEarning;
 
-    @Column("health_insurance")
-    private BigDecimal healthInsurance;
+    @Column("net")
+    private BigDecimal net;
 
-    @Column("share")
-    private BigDecimal share;
-
-    @Column("saving")
-    private BigDecimal saving;
-
-    @Column("deposit")
-    private BigDecimal deposit;
-
-    @Column("contribution")
-    private BigDecimal contribution;
-
-    @Column("loan")
-    private BigDecimal loan;
+    public PayrollItem(Long payrollId, Long staffId, BigDecimal gross, BigDecimal deduction, BigDecimal miscellaneousEarning, BigDecimal net) {
+        this.payrollId = payrollId;
+        this.staffId = staffId;
+        this.gross = gross;
+        this.deduction = deduction;
+        this.miscellaneousEarning = miscellaneousEarning;
+        this.net = net;
+    }
 }

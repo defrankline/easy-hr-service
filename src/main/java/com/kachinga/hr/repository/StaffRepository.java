@@ -10,6 +10,8 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface StaffRepository extends ReactiveCrudRepository<Staff, Long> {
+    Flux<Staff> findByCompanyId(Long companyId);
+
     Flux<Staff> findByCompanyId(Long companyId, PageRequest pageRequest);
 
     Mono<Staff> findByNumberAndCompanyId(String number, Long companyId);

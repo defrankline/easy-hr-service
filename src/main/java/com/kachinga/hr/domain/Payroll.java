@@ -1,5 +1,6 @@
 package com.kachinga.hr.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,9 +32,13 @@ public class Payroll {
     private Boolean approved;
 
     @NotNull(message = "Date is required")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column("date")
     private LocalDate date;
 
     @Column("company_id")
     private Long companyId;
+
+    @Column("salary_expense_account_id")
+    private Long salaryExpenseAccountId;
 }

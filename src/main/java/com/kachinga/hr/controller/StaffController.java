@@ -4,9 +4,13 @@ import com.kachinga.hr.domain.Staff;
 import com.kachinga.hr.domain.dto.DataDto;
 import com.kachinga.hr.service.StaffService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
+
+import java.net.URI;
 
 import static com.kachinga.hr.util.Config.API;
 
@@ -18,35 +22,41 @@ public class StaffController {
     private final StaffService staffService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Staff> createStaff(@RequestBody Staff staff) {
-        return staffService.create(staff);
+    public Mono<ResponseEntity<Staff>> create(@RequestBody Staff staff, ServerWebExchange exchange,
+                                              @RequestHeader(value = "X-auth-company-id") Long companyId) {
+        staff.setCompanyId(companyId);
+        return staffService.create(staff).map(createdStaff -> {
+            String path = exchange.getRequest().getPath().value();
+            URI location = UriComponentsBuilder.fromPath(path).path("/{id}").buildAndExpand(createdStaff.getId()).toUri();
+            return ResponseEntity.created(location).body(createdStaff);
+        }).onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
 
     @PutMapping("/{id}")
-    public Mono<Staff> updateStaff(@PathVariable Long id, @RequestBody Staff staff) {
-        return staffService.update(id, staff);
+    public Mono<ResponseEntity<Staff>> updateStaff(@PathVariable Long id, @RequestBody Staff staff,
+                                                   @RequestHeader(value = "X-auth-company-id") Long companyId) {
+        staff.setCompanyId(companyId);
+        return staffService.update(id, staff).map(updatedStaff -> ResponseEntity.ok().body(updatedStaff)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<DataDto<Staff>> getAllDeduction(@RequestParam(name = "sortBy", defaultValue = "number") String sortBy,
-                                                @RequestParam(name = "companyId") Long companyId,
-                                                @RequestParam(name = "sortDirection", defaultValue = "ASC") String sortDirection,
-                                                @RequestParam(name = "page", defaultValue = "0") int page,
-                                                @RequestParam(name = "size", defaultValue = "20") int size) {
-        return staffService.findAll(companyId, page, size, sortBy, sortDirection);
+    public Mono<ResponseEntity<DataDto<Staff>>> getAllDeduction(@RequestParam(name = "sortBy", defaultValue = "number") String sortBy,
+                                                                @RequestParam(name = "sortDirection", defaultValue = "ASC") String sortDirection,
+                                                                @RequestParam(name = "page", defaultValue = "0") int page,
+                                                                @RequestHeader(value = "X-auth-company-id") Long companyId,
+                                                                @RequestParam(name = "size", defaultValue = "20") int size) {
+        return staffService.findAll(companyId, page, size, sortBy, sortDirection)
+                .map(r -> ResponseEntity.ok().body(r)).defaultIfEmpty(ResponseEntity.ok(null));
     }
 
     @GetMapping("/{id}")
-    public Mono<Staff> getStaffById(@PathVariable Long id) {
-        return staffService.getById(id);
+    public Mono<ResponseEntity<Staff>> getStaffById(@PathVariable Long id) {
+        return staffService.getById(id).map(r -> ResponseEntity.ok().body(r)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteStaffById(@PathVariable Long id) {
-        return staffService.delete(id);
+    public Mono<ResponseEntity<Void>> deleteStaffById(@PathVariable Long id) {
+        return staffService.delete(id).then(Mono.fromCallable(() -> ResponseEntity.noContent().build()));
     }
 }
 

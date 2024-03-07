@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 public interface PayrollRepository extends ReactiveCrudRepository<Payroll, Long> {
     Flux<Payroll> findByCompanyId(Long companyId, PageRequest pageRequest);
 
-    Mono<Payroll> findByCodeAndCompanyId(String code, Long companyId);
+    Mono<Payroll> findByCode(String code);
 
     Mono<Long> countByCompanyId(Long companyId);
 }

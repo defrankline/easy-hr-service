@@ -10,6 +10,8 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface MonthlyDeductionRepository extends ReactiveCrudRepository<MonthlyDeduction, Long> {
+    Flux<MonthlyDeduction> findByStaffId(Long staffId);
+
     Flux<MonthlyDeduction> findByStaffId(Long staffId, PageRequest pageRequest);
 
     Mono<MonthlyDeduction> findByStaffIdAndDeductionId(Long staffId, Long deductionId);

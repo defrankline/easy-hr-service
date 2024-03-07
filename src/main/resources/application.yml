@@ -56,3 +56,30 @@ file:
   upload:
     directory: /var/lib/server/data
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'prometheus'
+  endpoint:
+    prometheus:
+      enabled: 'true'
+    metrics:
+      enabled: 'true'
+  metrics:
+    export:
+      prometheus:
+        enabled: 'true'
+
+messaging:
+  loan:
+    repayment:
+      info:
+        request:
+          exchange: 'LOAN_REPAYMENT_INFO_REQUEST_EXCHANGE'
+          routingKey: 'LOAN_REPAYMENT_INFO_REQUEST_ROUTING_KEY'
+          queue: 'LOAN_REPAYMENT_INFO_REQUEST_QUEUE'
+        feedback:
+          exchange: 'LOAN_REPAYMENT_INFO_FEEDBACK_EXCHANGE'
+          routingKey: 'LOAN_REPAYMENT_INFO_FEEDBACK_ROUTING_KEY'
+          queue: 'LOAN_REPAYMENT_INFO_FEEDBACK_QUEUE'

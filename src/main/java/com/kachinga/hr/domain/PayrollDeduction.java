@@ -38,4 +38,11 @@ public class PayrollDeduction {
 
     @Column("amount")
     private BigDecimal amount;
+
+    public PayrollDeduction(Long staffId, Long payrollId, Long deductionId, BigDecimal amount) {
+        this.staffId = staffId;
+        this.payrollId = payrollId;
+        this.deductionId = deductionId;
+        this.amount = amount;
+    }
 }
