@@ -10,9 +10,9 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface DeductionAccountRepository extends ReactiveCrudRepository<DeductionAccount, Long> {
-    Flux<DeductionAccount> findByDeductionIdAndCompanyId(Long deductionId, Long companyId, PageRequest pageRequest);
+    Flux<DeductionAccount> findByCompanyId(Long companyId, PageRequest pageRequest);
 
     Mono<DeductionAccount> findByDeductionIdAndCompanyId(Long deductionId, Long companyId);
 
-    Mono<Long> countAllByDeductionIdAndCompanyId(Long deductionId, Long companyId);
+    Mono<Long> countAllByCompanyId(Long companyId);
 }

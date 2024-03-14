@@ -2,6 +2,7 @@ package com.kachinga.hr.service;
 
 import com.kachinga.hr.domain.DeductionAccount;
 import com.kachinga.hr.domain.dto.DataDto;
+import com.kachinga.hr.domain.dto.DeductionAccountDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -9,13 +10,15 @@ import java.math.BigDecimal;
 
 @Service
 public interface DeductionAccountService {
-    Mono<DeductionAccount> save(DeductionAccount deductionAccount);
+    Mono<DeductionAccount> create(DeductionAccount deductionAccount);
 
-    Mono<DeductionAccount> getById(Long id);
+    Mono<DeductionAccount> update(Long id, DeductionAccount deductionAccount);
 
-    Mono<DeductionAccount> findByDeductionIdAndCompanyId(Long deductionId, Long companyId);
+    Mono<DeductionAccountDto> getById(Long id);
 
-    Mono<DataDto<DeductionAccount>> findAll(Long deductionId, Long companyId, int page, int size, String sortBy, String sortDirection);
+    Mono<DeductionAccountDto> findByDeductionIdAndCompanyId(Long deductionId, Long companyId);
+
+    Mono<DataDto<DeductionAccountDto>> findAll(Long companyId, int page, int size, String sortBy, String sortDirection);
 
     Mono<Void> delete(Long id);
 

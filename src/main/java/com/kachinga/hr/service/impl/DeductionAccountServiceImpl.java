@@ -1,8 +1,10 @@
 package com.kachinga.hr.service.impl;
 
+import com.kachinga.hr.domain.Deduction;
 import com.kachinga.hr.domain.DeductionAccount;
 import com.kachinga.hr.domain.Staff;
 import com.kachinga.hr.domain.dto.DataDto;
+import com.kachinga.hr.domain.dto.DeductionAccountDto;
 import com.kachinga.hr.repository.DeductionAccountRepository;
 import com.kachinga.hr.repository.DeductionRepository;
 import com.kachinga.hr.repository.StaffRepository;
@@ -24,50 +26,29 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
     private final DeductionAccountRepository deductionAccountRepository;
     private final StaffRepository staffRepository;
 
-    @Override
-    public Mono<DeductionAccount> save(DeductionAccount deductionAccount) {
-        return this.findByDeductionIdAndCompanyId(deductionAccount.getDeductionId(), deductionAccount.getCompanyId())
-                .flatMap(existingDeduction -> {
-                    deductionAccount.setDeductionId(deductionAccount.getDeductionId());
-                    deductionAccount.setAccountId(deductionAccount.getAccountId());
-                    deductionAccount.setFixedAmount(deductionAccount.getFixedAmount());
-                    deductionAccount.setPercentage(deductionAccount.getPercentage());
-                    deductionAccount.setId(existingDeduction.getId());
-                    return deductionAccountRepository.save(deductionAccount);
-                })
-                .switchIfEmpty(Mono.defer(() -> deductionAccountRepository.save(deductionAccount)));
+    public Mono<DeductionAccount> create(DeductionAccount deductionAccount) {
+        deductionAccount.setId(null);
+        return deductionAccountRepository.save(deductionAccount);
+    }
+
+    public Mono<DeductionAccount> update(Long id, DeductionAccount deductionAccount) {
+        return deductionAccountRepository.findById(id).flatMap(existingDeduction -> {
+            existingDeduction.setDeductionId(deductionAccount.getDeductionId());
+            existingDeduction.setAccountId(deductionAccount.getAccountId());
+            existingDeduction.setFixedAmount(deductionAccount.getFixedAmount());
+            existingDeduction.setPercentage(deductionAccount.getPercentage());
+            return deductionAccountRepository.save(existingDeduction);
+        }).switchIfEmpty(Mono.error(new RuntimeException("DeductionAccount not found with id " + deductionAccount.getId())));
     }
 
     @Override
-    public Mono<DeductionAccount> getById(Long id) {
-        return deductionAccountRepository.findById(id)
-                .flatMap(deductionAccount -> {
-                    if (deductionAccount.getDeductionId() != null) {
-                        return deductionRepository.findById(deductionAccount.getDeductionId())
-                                .map(deduction -> {
-                                    deductionAccount.setDeduction(deduction);
-                                    return deductionAccount;
-                                });
-                    } else {
-                        return Mono.just(deductionAccount);
-                    }
-                });
+    public Mono<DeductionAccountDto> getById(Long id) {
+        return deductionAccountRepository.findById(id).flatMap(deductionAccount -> deductionRepository.findById(deductionAccount.getDeductionId()).map(deduction -> new DeductionAccountDto(deductionAccount.getId(), deductionAccount.getAccountId(), deductionAccount.getDeductionId(), deductionAccount.getPercentage(), deductionAccount.getFixedAmount(), deduction)));
     }
 
     @Override
-    public Mono<DeductionAccount> findByDeductionIdAndCompanyId(Long deductionId, Long companyId) {
-        return deductionAccountRepository.findByDeductionIdAndCompanyId(deductionId, companyId)
-                .flatMap(deductionAccount -> {
-                    if (deductionAccount.getDeductionId() != null) {
-                        return deductionRepository.findById(deductionAccount.getDeductionId())
-                                .map(deduction -> {
-                                    deductionAccount.setDeduction(deduction);
-                                    return deductionAccount;
-                                });
-                    } else {
-                        return Mono.just(deductionAccount);
-                    }
-                });
+    public Mono<DeductionAccountDto> findByDeductionIdAndCompanyId(Long deductionId, Long companyId) {
+        return deductionAccountRepository.findByDeductionIdAndCompanyId(deductionId, companyId).flatMap(deductionAccount -> deductionRepository.findById(deductionAccount.getDeductionId()).map(deduction -> new DeductionAccountDto(deductionAccount.getId(), deductionAccount.getAccountId(), deductionAccount.getDeductionId(), deductionAccount.getPercentage(), deductionAccount.getFixedAmount(), deduction)));
     }
 
     @Override
@@ -75,51 +56,48 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
         return deductionAccountRepository.deleteById(id);
     }
 
-    private Flux<DeductionAccount> findAllWithDetails(Long deductionId, Long companyId, PageRequest pageRequest) {
-        return deductionAccountRepository.findByDeductionIdAndCompanyId(deductionId, companyId, pageRequest)
-                .flatMap(deductionAccount -> Mono.zip(
-                        Mono.just(deductionAccount),
-                        deductionRepository.findById(deductionAccount.getDeductionId())
-                ).map(tuple -> {
-                    deductionAccount.setDeduction(tuple.getT2());
-                    return deductionAccount;
-                }));
+    private Flux<DeductionAccountDto> findAllWithDetails(Long companyId, PageRequest pageRequest) {
+        return deductionAccountRepository.findByCompanyId(companyId, pageRequest).flatMap(deductionAccount -> Mono.zip(Mono.just(deductionAccount), deductionRepository.findById(deductionAccount.getDeductionId())).map(tuple -> {
+            DeductionAccount deductionAccountDetails = tuple.getT1();
+            Deduction deductionDetails = tuple.getT2();
+            return new DeductionAccountDto(deductionAccountDetails.getId(), deductionAccountDetails.getAccountId(), deductionAccountDetails.getDeductionId(), deductionAccountDetails.getPercentage(), deductionAccountDetails.getFixedAmount(), deductionDetails);
+        }));
     }
 
+
     @Override
-    public Mono<DataDto<DeductionAccount>> findAll(Long deductionId, Long companyId, int page, int size, String sortBy, String sortDirection) {
+    public Mono<DataDto<DeductionAccountDto>> findAll(Long companyId, int page, int size, String sortBy, String sortDirection) {
         Sort sort = sortDirection.equals("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Flux<DeductionAccount> deductionsFlux = findAllWithDetails(deductionId, companyId, pageRequest);
-        Mono<Long> countMono = deductionAccountRepository.countAllByDeductionIdAndCompanyId(deductionId, companyId);
+        Flux<DeductionAccountDto> deductionsFlux = findAllWithDetails(companyId, pageRequest);
+        Mono<Long> countMono = deductionAccountRepository.countAllByCompanyId(companyId);
         return Mono.zip(deductionsFlux.collectList(), countMono, DataDto::new);
     }
 
     @Override
     public Mono<BigDecimal> deductionAmount(Long staffId, Long deductionId, Long companyId) {
         Mono<Staff> staffMono = staffRepository.findById(staffId);
-        Mono<DeductionAccount> deductionAccountMono = this.findByDeductionIdAndCompanyId(deductionId, companyId);
+        Mono<DeductionAccountDto> deductionAccountMono = this.findByDeductionIdAndCompanyId(deductionId, companyId);
 
-        return Mono.zip(staffMono, deductionAccountMono)
-                .flatMap(tuple -> {
-                    Staff staff = tuple.getT1();
-                    DeductionAccount deductionAccount = tuple.getT2();
+        return Mono.zip(staffMono, deductionAccountMono).flatMap(tuple -> {
+            Staff staff = tuple.getT1();
+            DeductionAccountDto deductionAccount = tuple.getT2();
 
-                    BigDecimal grossSalary = staff.getSalary();
-                    BigDecimal fixedAmount = deductionAccount.getFixedAmount();
-                    Double percentage = deductionAccount.getPercentage();
+            BigDecimal grossSalary = staff.getSalary();
+            BigDecimal fixedAmount = deductionAccount.getFixedAmount() != null ? deductionAccount.getFixedAmount() : BigDecimal.ZERO;
+            Double percentage = deductionAccount.getPercentage() != null ? deductionAccount.getPercentage() : 0.0;
 
-                    BigDecimal taxableAmount = taxableAmount(grossSalary, fixedAmount, percentage);
-                    BigDecimal stockDeduction = taxableAmount.multiply(BigDecimal.valueOf(0.01)).multiply(new BigDecimal(percentage)).add(fixedAmount);
+            BigDecimal taxableAmount = taxableAmount(grossSalary, fixedAmount, percentage);
+            BigDecimal stockDeduction = taxableAmount.multiply(BigDecimal.valueOf(0.01)).multiply(new BigDecimal(percentage)).add(fixedAmount);
 
-                    return Mono.just(switch (deductionAccount.getDeduction().getCode()) {
-                        case "100" -> ssf(grossSalary, fixedAmount, percentage);
-                        case "101" -> hi(grossSalary, fixedAmount, percentage);
-                        case "102" -> payAsYouEarn(taxableAmount);
-                        case "103", "104", "105", "106" -> stockDeduction;
-                        default -> BigDecimal.ZERO;
-                    });
-                });
+            return Mono.just(switch (deductionAccount.getDeduction().getCode()) {
+                case "100" -> ssf(grossSalary, fixedAmount, percentage);
+                case "101" -> hi(grossSalary, fixedAmount, percentage);
+                case "102" -> payAsYouEarn(taxableAmount);
+                case "103", "104", "105", "106" -> stockDeduction;
+                default -> BigDecimal.ZERO;
+            });
+        });
     }
 
     private BigDecimal payAsYouEarn(BigDecimal taxableAmount) {
