@@ -5,6 +5,8 @@ import com.kachinga.hr.domain.dto.DataDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+
 @Service
 public interface DeductionAccountService {
     Mono<DeductionAccount> save(DeductionAccount deductionAccount);
@@ -16,4 +18,6 @@ public interface DeductionAccountService {
     Mono<DataDto<DeductionAccount>> findAll(Long deductionId, Long companyId, int page, int size, String sortBy, String sortDirection);
 
     Mono<Void> delete(Long id);
+
+    Mono<BigDecimal> deductionAmount(Long staffId, Long deductionId, Long companyId);
 }

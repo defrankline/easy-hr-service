@@ -5,8 +5,13 @@ import com.kachinga.hr.domain.dto.DataDto;
 import com.kachinga.hr.service.MonthlyDeductionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
+
+import java.net.URI;
 
 import static com.kachinga.hr.util.Config.API;
 
@@ -18,15 +23,19 @@ public class MonthlyDeductionController {
     private final MonthlyDeductionService monthlyDeductionService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<MonthlyDeduction> createStaff(@RequestBody MonthlyDeduction monthlyDeduction) {
-        return monthlyDeductionService.save(monthlyDeduction);
+    public Mono<ResponseEntity<MonthlyDeduction>> createStaff(@RequestBody MonthlyDeduction monthlyDeduction,
+                                                              ServerWebExchange exchange) {
+        return monthlyDeductionService.save(monthlyDeduction).map(createdMonthlyDeduction -> {
+            String path = exchange.getRequest().getPath().value();
+            URI location = UriComponentsBuilder.fromPath(path).path("/{id}").buildAndExpand(createdMonthlyDeduction.getId()).toUri();
+            return ResponseEntity.created(location).body(createdMonthlyDeduction);
+        }).onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
 
     @PutMapping("/{id}")
-    public Mono<MonthlyDeduction> updateStaff(@PathVariable Long id, @RequestBody MonthlyDeduction monthlyDeduction) {
+    public Mono<ResponseEntity<MonthlyDeduction>> updateStaff(@PathVariable Long id, @RequestBody MonthlyDeduction monthlyDeduction) {
         monthlyDeduction.setId(id);
-        return monthlyDeductionService.save(monthlyDeduction);
+        return monthlyDeductionService.save(monthlyDeduction).map(updatedMonthlyDeduction -> ResponseEntity.ok().body(updatedMonthlyDeduction)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @GetMapping
@@ -40,14 +49,13 @@ public class MonthlyDeductionController {
     }
 
     @GetMapping("/{id}")
-    public Mono<MonthlyDeduction> getStaffById(@PathVariable Long id) {
-        return monthlyDeductionService.getById(id);
+    public Mono<ResponseEntity<MonthlyDeduction>> getId(@PathVariable Long id) {
+        return monthlyDeductionService.getById(id).map(r -> ResponseEntity.ok().body(r)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteStaffById(@PathVariable Long id) {
-        return monthlyDeductionService.delete(id);
+    public Mono<ResponseEntity<Void>> deleteById(@PathVariable Long id) {
+        return monthlyDeductionService.delete(id).then(Mono.fromCallable(() -> ResponseEntity.noContent().build()));
     }
 }
 

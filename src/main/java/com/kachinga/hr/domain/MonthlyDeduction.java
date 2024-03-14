@@ -8,6 +8,8 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,4 +29,7 @@ public class MonthlyDeduction {
 
     @Column("deduction_id")
     private Long deductionId;
+
+    @Column("amount")
+    private BigDecimal amount;
 }

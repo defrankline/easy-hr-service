@@ -50,12 +50,12 @@ public class StaffController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Staff>> getStaffById(@PathVariable Long id) {
+    public Mono<ResponseEntity<Staff>> getId(@PathVariable Long id) {
         return staffService.getById(id).map(r -> ResponseEntity.ok().body(r)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Void>> deleteStaffById(@PathVariable Long id) {
+    public Mono<ResponseEntity<Void>> deleteById(@PathVariable Long id) {
         return staffService.delete(id).then(Mono.fromCallable(() -> ResponseEntity.noContent().build()));
     }
 }
