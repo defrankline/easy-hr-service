@@ -17,7 +17,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -101,25 +100,32 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
     }
 
     private BigDecimal payAsYouEarn(BigDecimal taxableAmount) {
-        if (taxableAmount.compareTo(new BigDecimal(270000)) <= 0) {
-            return BigDecimal.ZERO;
-        } else if (taxableAmount.compareTo(new BigDecimal(270000)) > 0 && taxableAmount.compareTo(new BigDecimal(520000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(270000));
-            return ((balance.multiply(new BigDecimal(9))).divide(new BigDecimal(100), 9, RoundingMode.CEILING));
-        } else if (taxableAmount.compareTo(new BigDecimal(520000)) > 0 && taxableAmount.compareTo(new BigDecimal(760000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(520000));
-            return ((balance.multiply(new BigDecimal(20))).divide(new BigDecimal(100), 9, RoundingMode.CEILING)).add(new BigDecimal(22500));
-        } else if (taxableAmount.compareTo(new BigDecimal(760000)) > 0 && taxableAmount.compareTo(new BigDecimal(1000000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(760000));
-            return ((balance.multiply(new BigDecimal(25))).divide(new BigDecimal(100), 9, RoundingMode.CEILING)).add(new BigDecimal(70500));
-        } else {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(1000000));
-            BigDecimal a = new BigDecimal(30);
-            BigDecimal c = new BigDecimal(100);
-            BigDecimal d = new BigDecimal(130500);
-            BigDecimal e = (a.multiply(balance)).divide(c, 9, RoundingMode.CEILING);
-            return e.add(d);
+        BigDecimal zero = BigDecimal.ZERO;
+        BigDecimal threshold1 = new BigDecimal("270000");
+        BigDecimal threshold2 = new BigDecimal("520000");
+        BigDecimal threshold3 = new BigDecimal("760000");
+        BigDecimal threshold4 = new BigDecimal("1000000");
+        BigDecimal rate1 = new BigDecimal("0.08");
+        BigDecimal rate2 = new BigDecimal("0.20");
+        BigDecimal rate3 = new BigDecimal("0.25");
+        BigDecimal rate4 = new BigDecimal("0.30");
+        BigDecimal fixedAmount1 = new BigDecimal("20000");
+        BigDecimal fixedAmount2 = new BigDecimal("68000");
+        BigDecimal fixedAmount3 = new BigDecimal("128000");
+
+        if (taxableAmount.compareTo(threshold1) <= 0) {
+            return zero;
+        } else if (taxableAmount.compareTo(threshold1) > 0 && taxableAmount.compareTo(threshold2) <= 0) {
+            return taxableAmount.subtract(threshold1).multiply(rate1);
+        } else if (taxableAmount.compareTo(threshold2) > 0 && taxableAmount.compareTo(threshold3) <= 0) {
+            return fixedAmount1.add(taxableAmount.subtract(threshold2).multiply(rate2));
+        } else if (taxableAmount.compareTo(threshold3) > 0 && taxableAmount.compareTo(threshold4) <= 0) {
+            return fixedAmount2.add(taxableAmount.subtract(threshold3).multiply(rate3));
+        } else if (taxableAmount.compareTo(threshold4) > 0) {
+            return fixedAmount3.add(taxableAmount.subtract(threshold4).multiply(rate4));
         }
+
+        return zero;
     }
 
     private BigDecimal ssf(BigDecimal grossSalary, BigDecimal fixedAmount, Double percentage) {
@@ -131,6 +137,8 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
     }
 
     private BigDecimal taxableAmount(BigDecimal grossSalary, BigDecimal fixedAmount, Double percentage) {
-        return grossSalary.subtract(ssf(grossSalary, fixedAmount, percentage).add(hi(grossSalary, fixedAmount, percentage)));
+        BigDecimal ssf = ssf(grossSalary, fixedAmount, percentage);
+        BigDecimal hi = hi(grossSalary, fixedAmount, percentage);
+        return grossSalary.subtract(ssf);
     }
 }
