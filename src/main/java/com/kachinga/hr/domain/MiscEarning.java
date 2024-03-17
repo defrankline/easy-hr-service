@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -20,8 +21,11 @@ public class MiscEarning {
     @Column("staff_id")
     private Long staffId;
 
-    @Column("item")
-    private String item;
+    @Column("item_id")
+    private Long itemId;
+
+    @Transient
+    private MiscEarningItem item;
 
     @Column("amount")
     private BigDecimal amount;

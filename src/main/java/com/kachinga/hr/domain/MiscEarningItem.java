@@ -20,12 +20,15 @@ public class MiscEarningItem {
     @Column("name")
     private String name;
 
-    @Column("amount")
-    private BigDecimal amount;
+    @Column("account_id")
+    private Long accountId;
 
-    @Column("recurrent")
-    private Boolean recurrent;
+    @Column("fixed_amount")
+    private BigDecimal fixedAmount;
 
-    @Column("added_to_gross")
-    private Boolean addedToGross;
+    @Column("percentage")
+    private Double percentage;
+
+    @Column("company_id")
+    private Long companyId;
 }

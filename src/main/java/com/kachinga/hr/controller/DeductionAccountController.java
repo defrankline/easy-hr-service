@@ -62,11 +62,11 @@ public class DeductionAccountController {
         return deductionAccountService.delete(id).then(Mono.fromCallable(() -> ResponseEntity.noContent().build()));
     }
 
-    @GetMapping("/get-client-deduction")
+    @GetMapping("/get-staff-deduction")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<BigDecimal> getClientDeduction(@RequestParam(name = "deductionId") Long deductionId,
-                                               @RequestParam(name = "staffId") Long staffId,
-                                               @RequestHeader(value = "X-auth-company-id") Long companyId) {
+    public Mono<BigDecimal> getStaffDeduction(@RequestParam(name = "deductionId") Long deductionId,
+                                              @RequestParam(name = "staffId") Long staffId,
+                                              @RequestHeader(value = "X-auth-company-id") Long companyId) {
         return deductionAccountService.deductionAmount(staffId, deductionId, companyId);
     }
 }
