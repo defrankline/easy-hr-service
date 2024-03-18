@@ -23,16 +23,33 @@ public class PayrollServiceImpl implements PayrollService {
     private final PayrollRepository payrollRepository;
     private final MonthlyDeductionRepository monthlyDeductionRepository;
     private final PayrollDeductionRepository payrollDeductionRepository;
-    private final DeductionRepository deductionRepository;
     private final PayrollItemRepository payrollItemRepository;
     private final StaffRepository staffRepository;
-    private final DeductionAccountRepository deductionAccountRepository;
     private final MiscEarningService miscEarningService;
     private final Producer producer;
 
     @Override
     public Mono<Payroll> save(Payroll payroll) {
-        return payrollRepository.save(payroll);
+        return payrollRepository.findById(payroll.getId())
+                .flatMap(existingDeduction -> {
+                    payroll.setName(payroll.getName());
+                    payroll.setCode(payroll.getCode());
+                    payroll.setDate(payroll.getDate());
+                    payroll.setApproved(payroll.getApproved());
+                    payroll.setCompanyId(payroll.getCompanyId());
+                    payroll.setSalaryExpenseAccountId(payroll.getSalaryExpenseAccountId());
+                    payroll.setId(existingDeduction.getId());
+                    return payrollRepository.save(payroll).flatMap(savedPayroll -> run(savedPayroll.getId()));
+                })
+                .switchIfEmpty(Mono.defer(() -> payrollRepository.save(payroll)))
+                .flatMap(savedPayroll -> run(savedPayroll.getId()));
+    }
+
+    @Override
+    public Mono<Payroll> run(Long id) {
+        return payrollRepository.findById(id)
+                .flatMap(payroll -> staffRepository.findByCompanyId(payroll.getCompanyId())
+                        .flatMap(staff -> processStaffPayroll(staff, payroll)).then(Mono.just(payroll)));
     }
 
     @Override
@@ -56,13 +73,6 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public Mono<Void> delete(Long id) {
         return payrollRepository.deleteById(id);
-    }
-
-    @Override
-    public Mono<Payroll> run(Long id) {
-        return payrollRepository.findById(id)
-                .flatMap(payroll -> staffRepository.findByCompanyId(payroll.getCompanyId())
-                        .flatMap(staff -> processStaffPayroll(staff, payroll)).then(Mono.just(payroll)));
     }
 
     private Flux<PayrollItem> processStaffPayroll(Staff staff, Payroll payroll) {

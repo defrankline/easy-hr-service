@@ -21,11 +21,13 @@ public class MiscEarningItemServiceImpl implements MiscEarningItemService {
     private final MiscEarningItemRepository miscEarningItemRepository;
     private final StaffRepository staffRepository;
 
+    @Override
     public Mono<MiscEarningItem> create(MiscEarningItem miscEarningItem) {
         miscEarningItem.setId(null);
         return miscEarningItemRepository.save(miscEarningItem);
     }
 
+    @Override
     public Mono<MiscEarningItem> update(Long id, MiscEarningItem miscEarningItem) {
         return miscEarningItemRepository.findById(id).flatMap(existingDeduction -> {
             existingDeduction.setName(miscEarningItem.getName());
