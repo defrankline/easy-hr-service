@@ -7,11 +7,11 @@ import reactor.core.publisher.Mono;
 
 @Service
 public interface PayrollService {
-    Mono<Payroll> save(Payroll payroll);
+    Mono<Payroll> create(Payroll payroll);
+
+    Mono<Payroll> update(Long id, Payroll payroll);
 
     Mono<Payroll> getById(Long id);
-
-    Mono<Payroll> getByCode(String code);
 
     Mono<DataDto<Payroll>> findAll(Long companyId, int page, int size, String sortBy, String sortDirection);
 

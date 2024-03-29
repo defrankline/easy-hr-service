@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table("payroll")
+@Table("payroll_items")
 public class PayrollItem {
     @Id
     private Long id;

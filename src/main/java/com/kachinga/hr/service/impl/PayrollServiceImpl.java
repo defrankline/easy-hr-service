@@ -27,17 +27,22 @@ public class PayrollServiceImpl implements PayrollService {
     private final StaffRepository staffRepository;
     private final MiscEarningService miscEarningService;
     private final Producer producer;
+    private final PayrollMiscEarningRepository payrollMiscEarningRepository;
 
     @Override
-    public Mono<Payroll> save(Payroll payroll) {
-        return payrollRepository.findById(payroll.getId())
+    public Mono<Payroll> create(Payroll payroll) {
+        return payrollRepository.save(payroll)
+                .flatMap(savedPayroll -> run(savedPayroll.getId()));
+    }
+
+    @Override
+    public Mono<Payroll> update(Long id, Payroll payroll) {
+        return payrollRepository.findById(id)
                 .flatMap(existingDeduction -> {
                     payroll.setName(payroll.getName());
-                    payroll.setCode(payroll.getCode());
                     payroll.setDate(payroll.getDate());
                     payroll.setApproved(payroll.getApproved());
                     payroll.setCompanyId(payroll.getCompanyId());
-                    payroll.setSalaryExpenseAccountId(payroll.getSalaryExpenseAccountId());
                     payroll.setId(existingDeduction.getId());
                     return payrollRepository.save(payroll).flatMap(savedPayroll -> run(savedPayroll.getId()));
                 })
@@ -57,11 +62,6 @@ public class PayrollServiceImpl implements PayrollService {
         return payrollRepository.findById(id);
     }
 
-    @Override
-    public Mono<Payroll> getByCode(String code) {
-        return payrollRepository.findByCode(code);
-    }
-
     public Mono<DataDto<Payroll>> findAll(Long companyId, int page, int size, String sortBy, String sortDirection) {
         Sort sort = sortDirection.equals("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         PageRequest pageRequest = PageRequest.of(page, size, sort);
@@ -78,27 +78,47 @@ public class PayrollServiceImpl implements PayrollService {
     private Flux<PayrollItem> processStaffPayroll(Staff staff, Payroll payroll) {
         Flux<MiscEarning> miscEarningsFlux = miscEarningService.findByStaffIdAndRecurrentTrue(staff.getId());
 
-        Mono<BigDecimal> totalRecurringEarningsToAddToGross = miscEarningsFlux.filter(MiscEarning::getAddedToGross).map(MiscEarning::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return miscEarningsFlux.collectList().flatMapMany(miscEarnings -> {
+            BigDecimal totalRecurringEarningsToAddToGross = miscEarnings.stream()
+                    .filter(MiscEarning::getAddedToGross)
+                    .map(MiscEarning::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Mono<BigDecimal> totalRecurringEarningsToAddToNet = miscEarningsFlux.filter(miscEarning -> !miscEarning.getAddedToGross()).map(MiscEarning::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalRecurringEarningsToAddToNet = miscEarnings.stream()
+                    .filter(miscEarning -> !miscEarning.getAddedToGross())
+                    .map(MiscEarning::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return Mono.zip(totalRecurringEarningsToAddToGross, totalRecurringEarningsToAddToNet).flatMapMany(totalEarnings -> {
-            BigDecimal adjustedGrossSalary = staff.getSalary().add(totalEarnings.getT1());
+            BigDecimal totalMiscEarning = totalRecurringEarningsToAddToGross.add(totalRecurringEarningsToAddToNet);
 
-            return monthlyDeductionRepository.findByStaffId(staff.getId()).flatMap(monthlyDeduction -> {
-                PayrollDeduction payrollDeduction = new PayrollDeduction(payroll.getId(), staff.getId(), monthlyDeduction.getDeductionId(), monthlyDeduction.getAmount());
-                requestLoanRepayment(payroll.getId(), staff.getId(), staff.getUserId(), monthlyDeduction.getDeductionId());
-                return payrollDeductionRepository.save(payrollDeduction);
-            }).collectList().flatMapMany(deductions -> {
-                BigDecimal totalDeductions = deductions.stream().map(PayrollDeduction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal netSalaryBeforeMisc = adjustedGrossSalary.subtract(totalDeductions);
-                BigDecimal finalNetSalary = netSalaryBeforeMisc.add(totalEarnings.getT2());
+            Mono<Void> savePayrollMiscEarningsMono = Flux.fromIterable(miscEarnings)
+                    .flatMap(miscEarning -> {
+                        PayrollMiscEarning payrollMiscEarning = new PayrollMiscEarning(
+                                payroll.getId(), staff.getId(), miscEarning.getItemId(), miscEarning.getAmount());
+                        return payrollMiscEarningRepository.save(payrollMiscEarning);
+                    }).then();
 
-                PayrollItem payrollItem = new PayrollItem(payroll.getId(), staff.getId(), adjustedGrossSalary, totalDeductions, BigDecimal.ZERO, finalNetSalary);
-                return payrollItemRepository.save(payrollItem).flux();
-            });
+            return savePayrollMiscEarningsMono.thenReturn(miscEarnings)
+                    .flatMapMany(ignored -> monthlyDeductionRepository.findByStaffId(staff.getId()))
+                    .flatMap(monthlyDeduction -> {
+                        PayrollDeduction payrollDeduction = new PayrollDeduction(
+                                staff.getId(), payroll.getId(), monthlyDeduction.getDeductionId(), monthlyDeduction.getAmount());
+                        requestLoanRepayment(payroll.getId(), staff.getId(), staff.getUserId(), monthlyDeduction.getDeductionId());
+                        return payrollDeductionRepository.save(payrollDeduction);
+                    }).collectList().flatMapMany(deductions -> {
+                        BigDecimal totalDeductions = deductions.stream()
+                                .map(PayrollDeduction::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        BigDecimal netSalaryBeforeMisc = staff.getSalary().add(totalRecurringEarningsToAddToGross).subtract(totalDeductions);
+                        BigDecimal finalNetSalary = netSalaryBeforeMisc.add(totalRecurringEarningsToAddToNet);
+                        PayrollItem payrollItem = new PayrollItem(
+                                payroll.getId(), staff.getId(), staff.getSalary().add(totalRecurringEarningsToAddToGross), totalDeductions, totalMiscEarning, finalNetSalary);
+
+                        return payrollItemRepository.save(payrollItem).flux();
+                    });
         });
     }
+
 
     private void requestLoanRepayment(Long payrollId, Long staffId, Long clientId, Long deductionId) {
         LoanRepaymentRequestDto dto = new LoanRepaymentRequestDto(payrollId, staffId, clientId, deductionId);

@@ -47,6 +47,60 @@ dependencies {
     testImplementation 'org.springframework.amqp:spring-rabbit-test'
 }
 
+task migrateTimestamp {
+    description 'Creates an empty new file within the src/main/resources/db/migration directory into which developers can add new SQL migration code.'
+    doLast {
+        if (!project.hasProperty('n')) throw new Exception("-Pn is required")
+        def fileName = project.getProperty('n')
+        if (!fileName.matches("[a-zA-Z_]+")) throw new Exception("Invalid migration name, name should match [a-zA-Z_]+")
+        if (fileName.length() < 10) throw new Exception("migration name is required to not be less than 10")
+        def timestamp = new Date().format('yyyyMMddHHmmssSSS', TimeZone.getTimeZone('GMT'))
+        def fullFileName = "${timestamp}__${fileName}.sql"
+        def migrationFile = new File(sourceSets.main.resources.srcDirs.first(), 'db/migration/' + fullFileName)
+        migrationFile << "-- WHEN COMMITTING OR REVIEWING THIS FILE: Make sure that the timestamp in the file name (that serves as a version) is the latest timestamp, and that no new migration have been added in the meanwhile.\n"
+        migrationFile << "-- Adding migrations out of order may cause this migration to never execute or behave in an unexpected way.\n"
+        migrationFile << "-- Migrations should NOT BE EDITED. Add a new migration to apply changes."
+        migrationFile.createNewFile()
+    }
+}
+
+task migrate {
+    description 'Creates an empty new file within the src/main/resources/db/migration directory into which developers can add new SQL migration code.'
+    doLast {
+        if (!project.hasProperty('n')) throw new Exception("-Pn is required")
+        def fileName = project.getProperty('n')
+        if (!fileName.matches("[a-zA-Z_]+")) throw new Exception("Invalid migration name, name should match [a-zA-Z_]+")
+        if (fileName.length() < 10) throw new Exception("Migration name is required to not be less than 10")
+
+        def migrationDir = new File(sourceSets.main.resources.srcDirs.first(), 'db/migration')
+        if (!migrationDir.exists()) {
+            throw new Exception("Migration directory does not exist: " + migrationDir.absolutePath)
+        }
+
+        // List existing migration files and find the highest version number
+        def highestVersion = migrationDir.listFiles(new FilenameFilter() {
+            @Override
+            boolean accept(File dir, String name) {
+                return name.toLowerCase().startsWith("v") && name.contains("__")
+            }
+        }).collect { file ->
+            // Extract version number from file name
+            return file.name.split("__")[0].substring(1).toInteger()
+        }.max() ?: 0 // Default to 0 if no files are found
+
+        // Increment the version number for the new file
+        def nextVersion = highestVersion + 1
+        def fullFileName = "V${nextVersion}__${fileName}.sql"
+        def migrationFile = new File(migrationDir, fullFileName)
+
+        migrationFile << "-- Flyway Migration Version: V${nextVersion}\n"
+        migrationFile << "-- Description: ${fileName.replace('_', ' ')}\n"
+        migrationFile << "-- Migrations should NOT BE EDITED after they have been applied. Add a new migration to apply changes.\n"
+        migrationFile.createNewFile()
+    }
+}
+
+
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"

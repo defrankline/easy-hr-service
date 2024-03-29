@@ -19,10 +19,6 @@ public class Payroll {
     @Id
     private Long id;
 
-    @NotNull(message = "Code is required")
-    @Column("code")
-    private String code;
-
     @NotNull(message = "Name is required")
     @Column("name")
     private String name;
@@ -38,7 +34,4 @@ public class Payroll {
 
     @Column("company_id")
     private Long companyId;
-
-    @Column("salary_expense_account_id")
-    private Long salaryExpenseAccountId;
 }
