@@ -2,9 +2,12 @@ package com.kachinga.hr.controller;
 
 import com.kachinga.hr.domain.Payroll;
 import com.kachinga.hr.domain.dto.DataDto;
+import com.kachinga.hr.domain.dto.PayrollReportDTO;
 import com.kachinga.hr.service.PayrollService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -46,6 +49,26 @@ public class PayrollController {
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> deleteById(@PathVariable Long id) {
         return payrollService.delete(id).then(Mono.fromCallable(() -> ResponseEntity.noContent().build()));
+    }
+
+    @GetMapping("/view/{id}")
+    public Mono<ResponseEntity<DataDto<PayrollReportDTO>>> view(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return payrollService.payroll(id, page, size)
+                .map(dataDto -> ResponseEntity.ok().body(dataDto))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping(value = "/download/{id}", produces = "application/vnd.ms-excel")
+    public Mono<ResponseEntity<byte[]>> download(@PathVariable("id") Long id) {
+        return payrollService.download(id)
+                .map(data -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"payroll-items.xlsx\"")
+                        .body(data));
     }
 }
 

@@ -37,6 +37,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.postgresql:r2dbc-postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.5'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'io.r2dbc:r2dbc-pool'
     runtimeOnly 'org.postgresql:postgresql'

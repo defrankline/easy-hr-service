@@ -44,38 +44,4 @@ public class DeductionServiceImpl implements DeductionService {
     public Mono<Void> delete(Long id) {
         return deductionRepository.deleteById(id);
     }
-
-    /*public BigDecimal payAsYouEarn(BigDecimal basicSalary) {
-        double percent = employeePercent;
-        BigDecimal percentage = new BigDecimal(percent);
-        BigDecimal ssf = (percentage.multiply(basicSalary)).divide(new BigDecimal(100), 9, RoundingMode.CEILING);
-        EmployeeEmployerContributionDto hif = hif(companyId, basicSalary);
-        BigDecimal taxableAmount = basicSalary.subtract(ssf.add(hif.getEmployee()));
-        if (taxableAmount.compareTo(new BigDecimal(270000)) <= 0) {
-            return BigDecimal.ZERO;
-        } else if (taxableAmount.compareTo(new BigDecimal(270000)) > 0 && taxableAmount.compareTo(new BigDecimal(520000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(270000));
-            BigDecimal employeeContribution = ((balance.multiply(new BigDecimal(9))).divide(new BigDecimal(100), 9, RoundingMode.CEILING));
-            return new EmployeeEmployerContributionDto(employeeContribution, employerContribution);
-        } else if (taxableAmount.compareTo(new BigDecimal(520000)) > 0 && taxableAmount.compareTo(new BigDecimal(760000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(520000));
-            BigDecimal employeeContribution = ((balance.multiply(new BigDecimal(20))).divide(new BigDecimal(100), 9, RoundingMode.CEILING)).add(new BigDecimal(22500));
-            BigDecimal employerContribution = (new BigDecimal(employerPercent / employeePercent)).multiply(employeeContribution);
-            return new EmployeeEmployerContributionDto(employeeContribution, employerContribution);
-        } else if (taxableAmount.compareTo(new BigDecimal(760000)) > 0 && taxableAmount.compareTo(new BigDecimal(1000000)) <= 0) {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(760000));
-            BigDecimal employeeContribution = ((balance.multiply(new BigDecimal(25))).divide(new BigDecimal(100), 9, RoundingMode.CEILING)).add(new BigDecimal(70500));
-            BigDecimal employerContribution = (new BigDecimal(employerPercent / employeePercent)).multiply(employeeContribution);
-            return new EmployeeEmployerContributionDto(employeeContribution, employerContribution);
-        } else {
-            BigDecimal balance = taxableAmount.subtract(new BigDecimal(1000000));
-            BigDecimal a = new BigDecimal(30);
-            BigDecimal c = new BigDecimal(100);
-            BigDecimal d = new BigDecimal(130500);
-            BigDecimal e = (a.multiply(balance)).divide(c, 9, RoundingMode.CEILING);
-            BigDecimal employeeContribution = e.add(d);
-            BigDecimal employerContribution = (new BigDecimal(employerPercent / employeePercent)).multiply(employeeContribution);
-            return new EmployeeEmployerContributionDto(employeeContribution, employerContribution);
-        }
-    }*/
 }

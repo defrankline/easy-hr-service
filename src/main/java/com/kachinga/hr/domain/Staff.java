@@ -17,6 +17,18 @@ public class Staff {
     @Id
     private Long id;
 
+    @Column("name")
+    private String name;
+
+    @Column("bank")
+    private String bank;
+
+    @Column("account_name")
+    private String accountName;
+
+    @Column("account_number")
+    private String accountNumber;
+
     @Column("user_id")
     private Long userId;
 

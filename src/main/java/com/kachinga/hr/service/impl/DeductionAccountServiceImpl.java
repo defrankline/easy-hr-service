@@ -94,6 +94,7 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
                 case "101" -> hi(grossSalary, fixedAmount, percentage);
                 case "102" -> payAsYouEarn(taxableAmount);
                 case "103", "104", "105", "106" -> stockDeduction;
+                case "108" -> studentLoan(grossSalary, fixedAmount, percentage);
                 default -> BigDecimal.ZERO;
             });
         });
@@ -129,6 +130,10 @@ public class DeductionAccountServiceImpl implements DeductionAccountService {
     }
 
     private BigDecimal ssf(BigDecimal grossSalary, BigDecimal fixedAmount, Double percentage) {
+        return ((new BigDecimal(0.01 * percentage)).multiply(grossSalary)).add(fixedAmount);
+    }
+
+    private BigDecimal studentLoan(BigDecimal grossSalary, BigDecimal fixedAmount, Double percentage) {
         return ((new BigDecimal(0.01 * percentage)).multiply(grossSalary)).add(fixedAmount);
     }
 
