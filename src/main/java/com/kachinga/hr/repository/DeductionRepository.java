@@ -25,6 +25,4 @@ public interface DeductionRepository extends ReactiveCrudRepository<Deduction, L
 
     @Query("SELECT * FROM deductions d WHERE LOWER(d.name) ILIKE LOWER(:searchTerm) OR d.code ILIKE :searchTerm")
     Flux<Deduction> findAllBy(@Param("searchTerm") String searchTerm, PageRequest pageRequest);
-
-    Mono<Long> count();
 }

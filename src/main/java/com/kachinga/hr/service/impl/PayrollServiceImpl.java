@@ -70,14 +70,37 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     public Mono<Payroll> update(Long id, Payroll payroll) {
-        return payrollRepository.findById(id).flatMap(existingDeduction -> {
-            payroll.setName(payroll.getName());
-            payroll.setDate(payroll.getDate());
-            payroll.setApproved(payroll.getApproved());
-            payroll.setCompanyId(payroll.getCompanyId());
-            payroll.setId(existingDeduction.getId());
-            return payrollRepository.save(payroll).flatMap(savedPayroll -> run(savedPayroll.getId()));
-        }).switchIfEmpty(Mono.defer(() -> payrollRepository.save(payroll))).flatMap(savedPayroll -> run(savedPayroll.getId()));
+        return payrollRepository.findById(id)
+                .flatMap(existingPayroll -> {
+                    Mono<Void> clearItems = clearPayrollItems(existingPayroll.getId());
+                    Mono<Void> clearDeductions = clearPayrollDeductions(existingPayroll.getId());
+                    Mono<Void> clearEarnings = clearPayrollMiscEarnings(existingPayroll.getId());
+                    return Mono.when(clearItems, clearDeductions, clearEarnings)
+                            .then(Mono.just(existingPayroll))
+                            .flatMap(payrollToBeUpdated -> {
+                                payrollToBeUpdated.setName(payroll.getName());
+                                payrollToBeUpdated.setDate(payroll.getDate());
+                                payrollToBeUpdated.setApproved(payroll.getApproved());
+                                payrollToBeUpdated.setCompanyId(payroll.getCompanyId());
+                                return payrollRepository.save(payrollToBeUpdated);
+                            });
+                })
+                .switchIfEmpty(Mono.defer(() -> payrollRepository.save(payroll)))
+                .flatMap(savedPayroll ->
+                        run(savedPayroll.getId()).thenReturn(savedPayroll)
+                );
+    }
+
+    private Mono<Void> clearPayrollItems(Long payrollId) {
+        return payrollItemRepository.deleteByPayrollId(payrollId);
+    }
+
+    private Mono<Void> clearPayrollDeductions(Long payrollId) {
+        return payrollDeductionRepository.deleteByPayrollId(payrollId);
+    }
+
+    private Mono<Void> clearPayrollMiscEarnings(Long payrollId) {
+        return payrollMiscEarningRepository.deleteByPayrollId(payrollId);
     }
 
     @Override

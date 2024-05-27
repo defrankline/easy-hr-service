@@ -15,4 +15,6 @@ public interface PayrollDeductionRepository extends ReactiveCrudRepository<Payro
     Mono<PayrollDeduction> findByPayrollIdAndStaffIdAndDeductionId(Long payrollId, Long staffId, Long deductionId);
 
     Mono<Long> countAllByStaffId(Long staffId);
+
+    Mono<Void> deleteByPayrollId(Long payrollId);
 }

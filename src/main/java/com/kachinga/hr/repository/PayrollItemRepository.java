@@ -15,4 +15,6 @@ public interface PayrollItemRepository extends ReactiveCrudRepository<PayrollIte
     Mono<PayrollItem> findByPayrollIdAndStaffId(Long payrollId, Long staffId);
 
     Mono<Long> countAllByPayrollId(Long payrollId);
+
+    Mono<Void> deleteByPayrollId(Long payrollId);
 }
